@@ -12,47 +12,95 @@ description: Use when you need to fetch documentation, web pages, or any URL con
 - When you need clean, token-efficient content from a URL
 - Reading blog posts, guides, or technical articles
 
-## How to Use
+## Methods
 
-Use `markdown.new` to convert any URL to clean markdown via Bash:
+### Quick fetch (GET - auto method)
 
 ```bash
 curl -s 'https://markdown.new/URL_HERE' | head -500
 ```
 
-For JS-heavy sites, force browser rendering:
+### JS-heavy sites (GET - browser rendering)
 
 ```bash
 curl -s 'https://markdown.new/URL_HERE?method=browser' | head -500
 ```
 
-POST API for programmatic use:
+### With images retained
 
+```bash
+curl -s 'https://markdown.new/URL_HERE?method=browser&retain_images=true' | head -500
+```
+
+### POST API (full control)
+
+**Auto (fastest, tries all 3 tiers):**
 ```bash
 curl -s 'https://markdown.new/' \
   -H 'Content-Type: application/json' \
-  -d '{"url": "URL_HERE", "method": "auto"}'
+  -d '{"url": "URL_HERE"}'
+```
+
+**Browser rendering (JS-heavy sites):**
+```bash
+curl -s 'https://markdown.new/' \
+  -H 'Content-Type: application/json' \
+  -d '{"url": "URL_HERE", "method": "browser"}'
+```
+
+**Workers AI with images:**
+```bash
+curl -s 'https://markdown.new/' \
+  -H 'Content-Type: application/json' \
+  -d '{"url": "URL_HERE", "method": "ai", "retain_images": true}'
 ```
 
 ## Parameters
 
-- `method`: `auto` (default), `ai`, or `browser`
-- `retain_images`: `true` or `false` (default: `false`)
+| Parameter | Values | Default | Notes |
+|-----------|--------|---------|-------|
+| `method` | `auto`, `ai`, `browser` | `auto` | `browser` for JS-heavy sites, `ai` for Cloudflare Workers AI |
+| `retain_images` | `true`, `false` | `false` | Include image markdown in output |
 
-## Conversion Pipeline
+## Conversion Pipeline (auto method)
 
-1. **Primary**: Requests `Accept: text/markdown` from Cloudflare edge
+1. **Primary**: Requests `Accept: text/markdown` from Cloudflare edge (fastest)
 2. **Fallback**: Cloudflare Workers AI `toMarkdown()` for HTML
-3. **Final**: Headless browser for JS-heavy pages
+3. **Final**: Headless browser rendering for JS-heavy pages
 
-## Tips
+## Choosing a Method
 
-- Output is markdown with YAML frontmatter (title, description, image)
-- Use `head -N` to limit output for large pages
-- JSON response includes `content`, `title`, `url`, `method`, `duration_ms`
-- Parse JSON content field: `curl -s URL | python3 -c "import sys,json; print(json.load(sys.stdin)['content'])"`
-- Some sites still block it (GitBook, heavy bot protection) - not a silver bullet
-- 80% fewer tokens than raw HTML
+| Scenario | Method |
+|----------|--------|
+| Standard docs (Python, MDN, etc.) | `auto` |
+| JS-rendered SPAs, React sites | `browser` |
+| Need images in output | any + `retain_images=true` |
+| First attempt failed | Retry with `browser` explicitly |
+
+## Response Format
+
+**GET requests**: Returns raw markdown text directly.
+
+**POST requests**: Returns JSON:
+```json
+{
+  "success": true,
+  "url": "...",
+  "title": "...",
+  "content": "markdown here...",
+  "method": "Cloudflare Workers AI",
+  "duration_ms": 1234
+}
+```
+
+Extract content from POST: `curl -s ... | python3 -c "import sys,json; print(json.load(sys.stdin)['content'])"`
+
+## Known Limitations
+
+- GitBook sites are blocked ("URL pattern not allowed for security reasons")
+- Some heavily bot-protected sites fail all 3 methods
+- Not a silver bullet, but works for most public documentation
+- 80% fewer tokens than raw HTML when it works
 
 ## Prefer Over WebFetch When
 
