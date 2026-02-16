@@ -69,6 +69,21 @@ else
     echo "[skip] No custom skills to install"
 fi
 
+# --- Configure git to use delta ---
+echo ""
+echo "--- Git Config ---"
+if command -v delta &>/dev/null; then
+    git config --global core.pager delta
+    git config --global interactive.diffFilter "delta --color-only"
+    git config --global delta.navigate true
+    git config --global delta.side-by-side true
+    git config --global merge.conflictstyle diff3
+    git config --global diff.colorMoved default
+    echo "[done] delta configured as git pager (side-by-side)"
+else
+    echo "[skip] delta not installed - run prerequisites first"
+fi
+
 # --- Plugin install instructions ---
 echo ""
 echo "=== Plugins ==="
