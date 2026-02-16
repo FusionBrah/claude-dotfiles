@@ -10,6 +10,19 @@ echo ""
 # Ensure ~/.claude exists
 mkdir -p "$CLAUDE_DIR"
 
+# --- Symlink CLAUDE.md ---
+if [ -L "$CLAUDE_DIR/CLAUDE.md" ]; then
+    echo "[skip] CLAUDE.md already symlinked"
+elif [ -f "$CLAUDE_DIR/CLAUDE.md" ]; then
+    echo "[backup] CLAUDE.md exists, backing up to CLAUDE.md.bak"
+    cp "$CLAUDE_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md.bak"
+    ln -sf "$DOTFILES_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
+    echo "[done] CLAUDE.md symlinked (backup saved)"
+else
+    ln -sf "$DOTFILES_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
+    echo "[done] CLAUDE.md symlinked"
+fi
+
 # --- Symlink settings.json ---
 if [ -L "$CLAUDE_DIR/settings.json" ]; then
     echo "[skip] settings.json already symlinked"

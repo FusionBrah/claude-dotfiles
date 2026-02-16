@@ -93,7 +93,7 @@ curl -s 'https://markdown.new/' \
 }
 ```
 
-Extract content from POST: `curl -s ... | python3 -c "import sys,json; print(json.load(sys.stdin)['content'])"`
+Extract content from POST: `curl -s ... | jq -r '.content'`
 
 ## Known Limitations
 
