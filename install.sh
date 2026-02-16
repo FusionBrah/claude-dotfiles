@@ -37,6 +37,25 @@ for rule in "$DOTFILES_DIR"/hookify.*.local.md; do
     fi
 done
 
+# --- Symlink custom skills ---
+echo ""
+echo "--- Custom Skills ---"
+if [ -d "$DOTFILES_DIR/skills" ]; then
+    mkdir -p "$CLAUDE_DIR/skills"
+    for skill_dir in "$DOTFILES_DIR"/skills/*/; do
+        [ -d "$skill_dir" ] || continue
+        skill_name="$(basename "$skill_dir")"
+        if [ -L "$CLAUDE_DIR/skills/$skill_name" ]; then
+            echo "[skip] skills/$skill_name already symlinked"
+        else
+            ln -sf "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
+            echo "[done] skills/$skill_name symlinked"
+        fi
+    done
+else
+    echo "[skip] No custom skills to install"
+fi
+
 # --- Plugin install instructions ---
 echo ""
 echo "=== Plugins ==="
