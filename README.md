@@ -1,6 +1,18 @@
 # Claude Code Dotfiles
 
-Portable Claude Code configuration: plugins, global hookify rules, custom skills, and CLI tool preferences. Symlinks into `~/.claude/` on any workstation.
+My opinionated Claude Code setup. Portable across workstations via symlinks.
+
+The idea: Claude Code is powerful out of the box, but without guardrails it'll happily barrel through a 10-step plan without stopping, propose "quick fixes" without finding root cause, force-push to main, and claim work is done without verifying anything. This repo fixes that.
+
+## Philosophy
+
+**Three layers of discipline:**
+
+1. **Hookify rules** catch me in the act — before I stop without verifying, before I skip the debugging process, before I push to a branch without the proper workflow. These are the seatbelts.
+
+2. **Global CLAUDE.md** preferences keep me reaching for the right tools — `jq` not python for JSON, `yq` not grep for YAML, `fd` not find, `tree` not `ls -R`. Small things that compound over hundreds of tool calls per session.
+
+3. **Custom skills** fill gaps the plugins don't cover — like `markdown-fetch` for pulling clean documentation from the web when WebFetch gets blocked (which is often).
 
 ## Quick Start
 
@@ -10,23 +22,23 @@ cd claude-dotfiles
 ./install.sh
 ```
 
-Then in your first Claude Code session, install plugins (the script prints these):
+Then in your first Claude Code session, install plugins (the script prints the full list):
 
 ```
-/plugin install context7@claude-plugins-official
 /plugin install superpowers@claude-plugins-official
+/plugin install hookify@claude-plugins-official
+/plugin install context7@claude-plugins-official
 /plugin install claude-md-management@claude-plugins-official
 /plugin install claude-code-setup@claude-plugins-official
 /plugin install ralph-loop@claude-plugins-official
 /plugin install pyright-lsp@claude-plugins-official
-/plugin install hookify@claude-plugins-official
 /plugin install plugin-dev@claude-plugins-official
 /plugin install agent-sdk-dev@claude-plugins-official
 ```
 
 ## Prerequisites
 
-CLI tools referenced in the global CLAUDE.md. Install before first use:
+Modern CLI tools that the global CLAUDE.md tells Claude to prefer:
 
 ```bash
 # Ubuntu/Debian
@@ -41,93 +53,86 @@ sudo dpkg -i /tmp/delta.deb
 brew install ripgrep jq fd tree yq git-delta
 ```
 
-| Tool | Replaces | Purpose |
-|------|----------|---------|
-| `rg` (ripgrep) | `grep` | Fast regex search, respects .gitignore |
-| `jq` | `python3 -c "import json"` | JSON parsing and transformation |
-| `yq` | `grep`/python on YAML | YAML parsing and editing |
-| `fd` | `find` | Fast file finding, respects .gitignore |
-| `tree` | `ls -R` | Directory structure visualization |
-| `delta` | default git diff | Syntax-highlighted diffs |
+| Tool | Replaces | Why bother |
+|------|----------|------------|
+| `rg` | `grep` | 10x faster, respects .gitignore, sane defaults |
+| `jq` | `python3 -c "import json"` | `jq -r '.content'` vs a 60-char python one-liner |
+| `yq` | grep/python on YAML | Query config files directly instead of regex guessing |
+| `fd` | `find` | `fd '\.py$'` vs `find . -name "*.py" -type f` |
+| `tree` | `ls -R` | Actually see the structure instead of a wall of text |
+| `delta` | default git diff | Syntax-highlighted, side-by-side diffs. Hard to go back. |
 
-## What's Included
+## What's Inside
 
-### Global CLAUDE.md
+### The Guardrails (Hookify Rules)
 
-Preferences that apply to all projects:
-- Prefer `jq` over python for JSON
-- Prefer `yq` over grep/python for YAML
-- Prefer `fd` over `find`
-- Prefer `tree` over `ls -R`
-- Use `delta` for diffs
-- Use `rg` in Bash when Grep tool isn't enough
+Six rules that fire automatically based on what Claude is about to do:
 
-### Plugins (settings.json)
+| Rule | What it prevents |
+|------|-----------------|
+| `verify-before-stop` | Claiming "done" without running verification. Evidence before assertions. |
+| `git-force-push-protection` | Force pushing. Hard blocked, no exceptions. |
+| `finishing-branch` | Creating PRs or merging without the proper branch completion workflow. |
+| `use-debugging-skill` | Jumping to fixes when a bug is reported. Forces root cause investigation first. |
+| `use-executing-plans` | Barreling through all plan steps at once. Forces batched execution with checkpoints. |
+| `use-writing-plans` | Writing vague plans. Forces structured format with exact file paths and code. |
 
-| Plugin | Purpose |
-|--------|---------|
-| superpowers | Skills framework: brainstorming, debugging, TDD, plans, verification, git workflows |
-| hookify | Rule-based hooks from markdown config files |
-| context7 | Up-to-date library documentation via MCP |
-| claude-md-management | CLAUDE.md auditing and session learning capture |
-| claude-code-setup | Automation recommendations for new projects |
-| ralph-loop | Autonomous loop execution |
-| pyright-lsp | Python type checking via Pyright |
-| plugin-dev | Plugin creation and development tools |
-| agent-sdk-dev | Claude Agent SDK app scaffolding and verification |
+### The Toolbelt (Plugins)
 
-### Hookify Rules (6 global rules)
+| Plugin | What it does |
+|--------|-------------|
+| superpowers | The big one. Skills for brainstorming, debugging, TDD, plan writing/execution, verification, git workflows. |
+| hookify | Makes the guardrail rules above work. Reads `.local.md` files and enforces them. |
+| context7 | Pulls up-to-date library docs via MCP. No more outdated API references. |
+| claude-md-management | Keeps CLAUDE.md files current with session learnings. |
+| claude-code-setup | Recommends automations for new projects. |
+| ralph-loop | Autonomous loop execution for long-running tasks. |
+| pyright-lsp | Python type checking. Catches type errors before runtime. |
+| plugin-dev | Tools for building Claude Code plugins. |
+| agent-sdk-dev | Claude Agent SDK scaffolding. |
 
-| Rule | Event | Action | Triggers When |
-|------|-------|--------|---------------|
-| `verify-before-stop` | stop | warn | Claude tries to stop - forces verification skill |
-| `git-force-push-protection` | bash | block | `git push --force` - hard blocks force pushes |
-| `finishing-branch` | bash | warn | `gh pr create`, `git merge main` - triggers finishing skill |
-| `use-debugging-skill` | prompt | warn | User mentions bugs/errors/failures - forces systematic debugging |
-| `use-executing-plans` | prompt | warn | User says "execute/implement the plan" - forces batched execution |
-| `use-writing-plans` | prompt | warn | User says "write/create a plan" - forces structured plan format |
+### The Preferences (Global CLAUDE.md)
+
+Tells Claude to reach for the right tool every time:
+- `jq` for JSON, `yq` for YAML, `fd` for files, `tree` for directories, `delta` for diffs, `rg` when the Grep tool isn't enough
 
 ### Custom Skills
 
-| Skill | Purpose |
-|-------|---------|
-| `markdown-fetch` | Fetch web pages as clean markdown via `markdown.new` - preferred over WebFetch for docs |
+| Skill | What it solves |
+|-------|---------------|
+| `markdown-fetch` | WebFetch gets blocked by half the internet. This uses [markdown.new](https://markdown.new) to convert pages to clean markdown via Cloudflare's pipeline — auto, Workers AI, or headless browser fallback. |
 
 ## File Structure
 
 ```
 claude-dotfiles/
-  CLAUDE.md                                    # Global CLI tool preferences
-  settings.json                                # Plugin enables
-  hookify.verify-before-stop.local.md          # Stop event: verify work
-  hookify.git-force-push-protection.local.md   # Bash event: block force push
-  hookify.finishing-branch.local.md            # Bash event: PR/merge workflow
-  hookify.use-debugging-skill.local.md         # Prompt event: bugs/errors
-  hookify.use-executing-plans.local.md         # Prompt event: plan execution
-  hookify.use-writing-plans.local.md           # Prompt event: plan writing
+  CLAUDE.md                                    # Global preferences
+  settings.json                                # Plugin config
+  hookify.verify-before-stop.local.md          # Stop: verify first
+  hookify.git-force-push-protection.local.md   # Bash: block force push
+  hookify.finishing-branch.local.md            # Bash: PR/merge workflow
+  hookify.use-debugging-skill.local.md         # Prompt: force debugging
+  hookify.use-executing-plans.local.md         # Prompt: batched execution
+  hookify.use-writing-plans.local.md           # Prompt: structured plans
   skills/
     markdown-fetch/
-      SKILL.md                                 # Web-to-markdown fetching skill
-  install.sh                                   # Symlinks into ~/.claude/
+      SKILL.md                                 # markdown.new web fetcher
+  install.sh                                   # Symlinks + delta config
   uninstall.sh                                 # Clean removal
 ```
 
 ## How It Works
 
-`install.sh` creates symlinks from this repo into `~/.claude/`:
-- `CLAUDE.md` -> global preferences
-- `settings.json` -> plugin configuration
-- `hookify.*.local.md` -> global hookify rules
-- `skills/*/` -> custom skills directories
+`install.sh` symlinks everything into `~/.claude/`. Edits in either location update the same file. Hookify rules and skills take effect immediately — no restart needed.
 
-Edits to either the symlink or the repo file update the same source. Changes take effect immediately (no restart needed for hookify rules and skills).
+The one manual step: plugins require `/plugin install` once per machine. The script prints the commands.
 
-Plugins are not auto-installed from `settings.json` - they require a one-time `/plugin install` in a Claude Code session per machine.
+`uninstall.sh` removes symlinks and restores backups.
 
-## Uninstall
+## Extending
 
-```bash
-./uninstall.sh
-```
+**Add a hookify rule:** Create `hookify.my-rule.local.md` in this repo, commit, pull on other machines. Done.
 
-Removes symlinks and restores backed-up settings if present.
+**Add a skill:** Create `skills/my-skill/SKILL.md`, commit, pull. The install script handles the symlink.
+
+**Change a preference:** Edit `CLAUDE.md`, commit, pull. Active immediately.
