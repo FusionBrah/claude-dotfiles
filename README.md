@@ -1,6 +1,6 @@
 # Claude Code Dotfiles
 
-Portable Claude Code configuration: plugins, global hookify rules, and custom skills. Symlinks into `~/.claude/` on any workstation.
+Portable Claude Code configuration: plugins, global hookify rules, custom skills, and CLI tool preferences. Symlinks into `~/.claude/` on any workstation.
 
 ## Quick Start
 
@@ -24,7 +24,43 @@ Then in your first Claude Code session, install plugins (the script prints these
 /plugin install agent-sdk-dev@claude-plugins-official
 ```
 
+## Prerequisites
+
+CLI tools referenced in the global CLAUDE.md. Install before first use:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install -y ripgrep jq fd-find tree
+sudo ln -sf /usr/bin/fdfind /usr/local/bin/fd  # Ubuntu names it fdfind
+sudo snap install yq
+# delta: https://github.com/dandavison/delta/releases
+wget -qO /tmp/delta.deb https://github.com/dandavison/delta/releases/latest/download/git-delta_0.18.2_amd64.deb
+sudo dpkg -i /tmp/delta.deb
+
+# macOS
+brew install ripgrep jq fd tree yq git-delta
+```
+
+| Tool | Replaces | Purpose |
+|------|----------|---------|
+| `rg` (ripgrep) | `grep` | Fast regex search, respects .gitignore |
+| `jq` | `python3 -c "import json"` | JSON parsing and transformation |
+| `yq` | `grep`/python on YAML | YAML parsing and editing |
+| `fd` | `find` | Fast file finding, respects .gitignore |
+| `tree` | `ls -R` | Directory structure visualization |
+| `delta` | default git diff | Syntax-highlighted diffs |
+
 ## What's Included
+
+### Global CLAUDE.md
+
+Preferences that apply to all projects:
+- Prefer `jq` over python for JSON
+- Prefer `yq` over grep/python for YAML
+- Prefer `fd` over `find`
+- Prefer `tree` over `ls -R`
+- Use `delta` for diffs
+- Use `rg` in Bash when Grep tool isn't enough
 
 ### Plugins (settings.json)
 
@@ -61,6 +97,7 @@ Then in your first Claude Code session, install plugins (the script prints these
 
 ```
 claude-dotfiles/
+  CLAUDE.md                                    # Global CLI tool preferences
   settings.json                                # Plugin enables
   hookify.verify-before-stop.local.md          # Stop event: verify work
   hookify.git-force-push-protection.local.md   # Bash event: block force push
@@ -78,6 +115,7 @@ claude-dotfiles/
 ## How It Works
 
 `install.sh` creates symlinks from this repo into `~/.claude/`:
+- `CLAUDE.md` -> global preferences
 - `settings.json` -> plugin configuration
 - `hookify.*.local.md` -> global hookify rules
 - `skills/*/` -> custom skills directories
