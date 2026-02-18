@@ -23,17 +23,28 @@ else
     echo "[done] CLAUDE.md symlinked"
 fi
 
-# --- Symlink settings.json ---
+# --- Merge settings.json ---
+# If it's currently a symlink from a previous install, restore the backup first
 if [ -L "$CLAUDE_DIR/settings.json" ]; then
-    echo "[skip] settings.json already symlinked"
-elif [ -f "$CLAUDE_DIR/settings.json" ]; then
-    echo "[backup] settings.json exists, backing up to settings.json.bak"
-    cp "$CLAUDE_DIR/settings.json" "$CLAUDE_DIR/settings.json.bak"
-    ln -sf "$DOTFILES_DIR/settings.json" "$CLAUDE_DIR/settings.json"
-    echo "[done] settings.json symlinked (backup saved)"
+    rm "$CLAUDE_DIR/settings.json"
+    if [ -f "$CLAUDE_DIR/settings.json.bak" ]; then
+        mv "$CLAUDE_DIR/settings.json.bak" "$CLAUDE_DIR/settings.json"
+        echo "[restored] settings.json from previous symlink install"
+    fi
+fi
+
+if [ -f "$CLAUDE_DIR/settings.json" ]; then
+    # Merge: add dotfiles plugins into existing settings, preserving user's plugins
+    jq -s '.[0] as $user | .[1] as $dotfiles |
+        $user * {
+            enabledPlugins: (($user.enabledPlugins // {}) * ($dotfiles.enabledPlugins // {}))
+        }' \
+        "$CLAUDE_DIR/settings.json" "$DOTFILES_DIR/settings.json" > "$CLAUDE_DIR/settings.json.tmp"
+    mv "$CLAUDE_DIR/settings.json.tmp" "$CLAUDE_DIR/settings.json"
+    echo "[done] settings.json merged (your plugins preserved, dotfiles plugins added)"
 else
-    ln -sf "$DOTFILES_DIR/settings.json" "$CLAUDE_DIR/settings.json"
-    echo "[done] settings.json symlinked"
+    cp "$DOTFILES_DIR/settings.json" "$CLAUDE_DIR/settings.json"
+    echo "[done] settings.json created from dotfiles"
 fi
 
 # --- Symlink hookify rules ---
@@ -93,13 +104,7 @@ echo "Start claude and run these commands:"
 echo ""
 
 # Read plugin list from settings.json
-plugins=$(python3 -c "
-import json
-with open('$DOTFILES_DIR/settings.json') as f:
-    data = json.load(f)
-for plugin in data.get('enabledPlugins', {}):
-    print(plugin)
-" 2>/dev/null || echo "")
+plugins=$(jq -r '.enabledPlugins // {} | keys[]' "$DOTFILES_DIR/settings.json" 2>/dev/null || echo "")
 
 if [ -n "$plugins" ]; then
     while IFS= read -r plugin; do
