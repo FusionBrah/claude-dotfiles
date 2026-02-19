@@ -1,6 +1,6 @@
 ---
 name: use-writing-plans
-enabled: true
+enabled: false
 event: prompt
 conditions:
   - field: user_prompt

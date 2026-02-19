@@ -34,6 +34,9 @@ Then in your first Claude Code session, install plugins (the script prints the f
 /plugin install pyright-lsp@claude-plugins-official
 /plugin install plugin-dev@claude-plugins-official
 /plugin install agent-sdk-dev@claude-plugins-official
+/plugin install code-simplifier@claude-plugins-official
+/plugin install frontend-design@claude-plugins-official
+/plugin install code-review@claude-plugins-official
 ```
 
 ## Prerequisites
@@ -66,7 +69,7 @@ brew install ripgrep jq fd tree yq git-delta
 
 ### The Guardrails (Hookify Rules)
 
-Six rules that fire automatically based on what Claude is about to do:
+Rules that fire automatically based on what Claude is about to do:
 
 | Rule | What it prevents |
 |------|-----------------|
@@ -74,8 +77,9 @@ Six rules that fire automatically based on what Claude is about to do:
 | `git-force-push-protection` | Force pushing. Hard blocked, no exceptions. |
 | `finishing-branch` | Creating PRs or merging without the proper branch completion workflow. |
 | `use-debugging-skill` | Jumping to fixes when a bug is reported. Forces root cause investigation first. |
-| `use-executing-plans` | Barreling through all plan steps at once. Forces batched execution with checkpoints. |
-| `use-writing-plans` | Writing vague plans. Forces structured format with exact file paths and code. |
+| `use-brainstorming` | Skipping design exploration. Forces 2-3 approaches before committing to one. |
+| `require-review-before-done` | Finishing work without code review. Forces review before declaring done. |
+| `require-skills-on-session-continue` | Resuming sessions without checking for applicable skills. |
 
 ### The Toolbelt (Plugins)
 
@@ -90,6 +94,9 @@ Six rules that fire automatically based on what Claude is about to do:
 | pyright-lsp | Python type checking. Catches type errors before runtime. |
 | plugin-dev | Tools for building Claude Code plugins. |
 | agent-sdk-dev | Claude Agent SDK scaffolding. |
+| code-simplifier | Simplifies and refines code for clarity and maintainability. |
+| frontend-design | Production-grade frontend interfaces with high design quality. |
+| code-review | Code review for pull requests. |
 
 ### The Preferences (Global CLAUDE.md)
 
@@ -106,19 +113,22 @@ Tells Claude to reach for the right tool every time:
 
 ```
 claude-dotfiles/
-  CLAUDE.md                                    # Global preferences
-  settings.json                                # Plugin config
-  hookify.verify-before-stop.local.md          # Stop: verify first
-  hookify.git-force-push-protection.local.md   # Bash: block force push
-  hookify.finishing-branch.local.md            # Bash: PR/merge workflow
-  hookify.use-debugging-skill.local.md         # Prompt: force debugging
-  hookify.use-executing-plans.local.md         # Prompt: batched execution
-  hookify.use-writing-plans.local.md           # Prompt: structured plans
+  CLAUDE.md                                            # Global preferences
+  settings.json                                        # Plugin config
+  hookify.verify-before-stop.local.md                  # Stop: verify first
+  hookify.git-force-push-protection.local.md           # Bash: block force push
+  hookify.finishing-branch.local.md                    # Bash: PR/merge workflow
+  hookify.use-debugging-skill.local.md                 # Prompt: force debugging
+  hookify.use-brainstorming.local.md                   # Prompt: force design exploration
+  hookify.require-review-before-done.local.md          # Stop: require code review
+  hookify.require-skills-on-session-continue.local.md  # Prompt: check skills on resume
+  hookify.use-executing-plans.local.md                 # (disabled) redundant with superpowers
+  hookify.use-writing-plans.local.md                   # (disabled) redundant with superpowers
   skills/
     markdown-fetch/
-      SKILL.md                                 # markdown.new web fetcher
-  install.sh                                   # Symlinks + delta config
-  uninstall.sh                                 # Clean removal
+      SKILL.md                                         # markdown.new web fetcher
+  install.sh                                           # Symlinks + delta config
+  uninstall.sh                                         # Clean removal
 ```
 
 ## How It Works

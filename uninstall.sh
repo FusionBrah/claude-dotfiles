@@ -39,5 +39,27 @@ for rule in "$CLAUDE_DIR"/hookify.*.local.md; do
     echo "[removed] $filename symlink"
 done
 
+# Remove symlinked CLAUDE.md
+if [ -L "$CLAUDE_DIR/CLAUDE.md" ]; then
+    rm "$CLAUDE_DIR/CLAUDE.md"
+    echo "[removed] CLAUDE.md symlink"
+    if [ -f "$CLAUDE_DIR/CLAUDE.md.bak" ]; then
+        mv "$CLAUDE_DIR/CLAUDE.md.bak" "$CLAUDE_DIR/CLAUDE.md"
+        echo "[restored] CLAUDE.md from backup"
+    fi
+fi
+
+# Remove symlinked skills
+if [ -d "$DOTFILES_DIR/skills" ]; then
+    for skill_dir in "$DOTFILES_DIR"/skills/*/; do
+        [ -d "$skill_dir" ] || continue
+        skill_name="$(basename "$skill_dir")"
+        if [ -L "$CLAUDE_DIR/skills/$skill_name" ]; then
+            rm "$CLAUDE_DIR/skills/$skill_name"
+            echo "[removed] skills/$skill_name symlink"
+        fi
+    done
+fi
+
 echo ""
 echo "=== Done ==="
