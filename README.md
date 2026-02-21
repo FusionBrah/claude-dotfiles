@@ -1,6 +1,6 @@
 # Claude Code Dotfiles
 
-My opinionated Claude Code setup. Portable across workstations via symlinks.
+My opinionated Claude Code setup. Portable across workstations.
 
 The idea: Claude Code is powerful out of the box, but without guardrails it'll happily barrel through a 10-step plan without stopping, propose "quick fixes" without finding root cause, force-push to main, and claim work is done without verifying anything. This repo fixes that.
 
@@ -127,17 +127,17 @@ claude-dotfiles/
   skills/
     markdown-fetch/
       SKILL.md                                         # markdown.new web fetcher
-  install.sh                                           # Symlinks + delta config
+  install.sh                                           # Merge + symlinks + delta config
   uninstall.sh                                         # Clean removal
 ```
 
 ## How It Works
 
-`install.sh` symlinks everything into `~/.claude/`. Edits in either location update the same file. Hookify rules and skills take effect immediately — no restart needed.
+`install.sh` merges the global `CLAUDE.md` into your existing `~/.claude/CLAUDE.md` using HTML comment markers (`<!-- CLAUDE_DOTFILES_START -->` / `<!-- CLAUDE_DOTFILES_END -->`). Your personal rules stay untouched — the dotfiles content gets appended on first install and replaced in-place on subsequent runs. Everything else (hookify rules, skills) is symlinked into `~/.claude/`.
 
 The one manual step: plugins require `/plugin install` once per machine. The script prints the commands.
 
-`uninstall.sh` removes symlinks and restores backups.
+`uninstall.sh` strips the managed section from `CLAUDE.md` (preserving your content), removes symlinks, and restores backups. If a legacy symlink install is detected, it handles that too.
 
 ## Extending
 
@@ -145,4 +145,4 @@ The one manual step: plugins require `/plugin install` once per machine. The scr
 
 **Add a skill:** Create `skills/my-skill/SKILL.md`, commit, pull. The install script handles the symlink.
 
-**Change a preference:** Edit `CLAUDE.md`, commit, pull. Active immediately.
+**Change a preference:** Edit `CLAUDE.md` in this repo, commit, pull, re-run `./install.sh`. It replaces the managed section without touching your personal rules.
