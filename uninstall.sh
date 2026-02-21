@@ -39,14 +39,35 @@ for rule in "$CLAUDE_DIR"/hookify.*.local.md; do
     echo "[removed] $filename symlink"
 done
 
-# Remove symlinked CLAUDE.md
+# Remove dotfiles section from CLAUDE.md
+MARKER_START="<!-- CLAUDE_DOTFILES_START -->"
+MARKER_END="<!-- CLAUDE_DOTFILES_END -->"
+
 if [ -L "$CLAUDE_DIR/CLAUDE.md" ]; then
+    # Legacy symlink install — restore backup
     rm "$CLAUDE_DIR/CLAUDE.md"
     echo "[removed] CLAUDE.md symlink"
     if [ -f "$CLAUDE_DIR/CLAUDE.md.bak" ]; then
         mv "$CLAUDE_DIR/CLAUDE.md.bak" "$CLAUDE_DIR/CLAUDE.md"
         echo "[restored] CLAUDE.md from backup"
     fi
+elif [ -f "$CLAUDE_DIR/CLAUDE.md" ] && grep -qF "$MARKER_START" "$CLAUDE_DIR/CLAUDE.md"; then
+    # Merged install — strip the managed section
+    awk -v start="$MARKER_START" -v end="$MARKER_END" '
+        $0 == start { skip=1; next }
+        $0 == end { skip=0; next }
+        !skip { print }
+    ' "$CLAUDE_DIR/CLAUDE.md" > "$CLAUDE_DIR/CLAUDE.md.tmp"
+    mv "$CLAUDE_DIR/CLAUDE.md.tmp" "$CLAUDE_DIR/CLAUDE.md"
+    # Remove file if it's now empty (only whitespace)
+    if [ ! -s "$CLAUDE_DIR/CLAUDE.md" ] || ! grep -q '[^[:space:]]' "$CLAUDE_DIR/CLAUDE.md"; then
+        rm "$CLAUDE_DIR/CLAUDE.md"
+        echo "[removed] CLAUDE.md (was only dotfiles content)"
+    else
+        echo "[done] removed dotfiles section from CLAUDE.md (your content preserved)"
+    fi
+else
+    echo "[skip] CLAUDE.md has no dotfiles section"
 fi
 
 # Remove symlinked skills

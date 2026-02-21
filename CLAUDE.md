@@ -1,3 +1,4 @@
+<!-- CLAUDE_DOTFILES_START -->
 # Global Claude Code Preferences
 
 ## CLI Tools
@@ -22,3 +23,4 @@
   - `diff file1 file2 | delta`
   - `git diff | delta` (automatic if configured)
 - **Use `rg`** directly in Bash when the Grep tool is insufficient (e.g., complex piped workflows)
+<!-- CLAUDE_DOTFILES_END -->

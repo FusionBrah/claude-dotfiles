@@ -10,17 +10,43 @@ echo ""
 # Ensure ~/.claude exists
 mkdir -p "$CLAUDE_DIR"
 
-# --- Symlink CLAUDE.md ---
+# --- Merge CLAUDE.md ---
+MARKER_START="<!-- CLAUDE_DOTFILES_START -->"
+MARKER_END="<!-- CLAUDE_DOTFILES_END -->"
+
+# If it's currently a symlink from a previous install, replace with the actual file
 if [ -L "$CLAUDE_DIR/CLAUDE.md" ]; then
-    echo "[skip] CLAUDE.md already symlinked"
-elif [ -f "$CLAUDE_DIR/CLAUDE.md" ]; then
-    echo "[backup] CLAUDE.md exists, backing up to CLAUDE.md.bak"
-    cp "$CLAUDE_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md.bak"
-    ln -sf "$DOTFILES_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
-    echo "[done] CLAUDE.md symlinked (backup saved)"
+    rm "$CLAUDE_DIR/CLAUDE.md"
+    if [ -f "$CLAUDE_DIR/CLAUDE.md.bak" ]; then
+        mv "$CLAUDE_DIR/CLAUDE.md.bak" "$CLAUDE_DIR/CLAUDE.md"
+        echo "[restored] CLAUDE.md from backup (was symlinked)"
+    else
+        touch "$CLAUDE_DIR/CLAUDE.md"
+        echo "[migrated] removed old symlink, starting fresh"
+    fi
+fi
+
+DOTFILES_CONTENT="$(cat "$DOTFILES_DIR/CLAUDE.md")"
+
+if [ ! -f "$CLAUDE_DIR/CLAUDE.md" ]; then
+    # No existing file — just create it
+    echo "$DOTFILES_CONTENT" > "$CLAUDE_DIR/CLAUDE.md"
+    echo "[done] CLAUDE.md created"
+elif grep -qF "$MARKER_START" "$CLAUDE_DIR/CLAUDE.md"; then
+    # Markers exist — replace the managed section in-place
+    # Use awk to replace everything between markers (inclusive)
+    awk -v start="$MARKER_START" -v end="$MARKER_END" -v content="$DOTFILES_CONTENT" '
+        $0 == start { print content; skip=1; next }
+        $0 == end { skip=0; next }
+        !skip { print }
+    ' "$CLAUDE_DIR/CLAUDE.md" > "$CLAUDE_DIR/CLAUDE.md.tmp"
+    mv "$CLAUDE_DIR/CLAUDE.md.tmp" "$CLAUDE_DIR/CLAUDE.md"
+    echo "[done] CLAUDE.md updated (existing content preserved)"
 else
-    ln -sf "$DOTFILES_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
-    echo "[done] CLAUDE.md symlinked"
+    # No markers — append with a blank line separator
+    echo "" >> "$CLAUDE_DIR/CLAUDE.md"
+    echo "$DOTFILES_CONTENT" >> "$CLAUDE_DIR/CLAUDE.md"
+    echo "[done] CLAUDE.md appended (existing content preserved)"
 fi
 
 # --- Merge settings.json ---
@@ -116,4 +142,4 @@ fi
 
 echo ""
 echo "=== Done ==="
-echo "Config files are symlinked. Install plugins above on first session."
+echo "CLAUDE.md merged, config files linked. Install plugins above on first session."
