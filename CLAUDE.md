@@ -23,4 +23,9 @@
   - `diff file1 file2 | delta`
   - `git diff | delta` (automatic if configured)
 - **Use `rg`** directly in Bash when the Grep tool is insufficient (e.g., complex piped workflows)
+
+## Working Style
+
+- **Never guess URLs, filenames, or asset names** — always verify via API or direct lookup first (e.g., `curl -s api.github.com/repos/.../releases/latest | jq`)
+- **Never assume commands or syntax** — look up the correct usage first, especially for unfamiliar tools, Docker images, or system-specific CLIs. If unsure, search docs before suggesting.
 <!-- CLAUDE_DOTFILES_END -->

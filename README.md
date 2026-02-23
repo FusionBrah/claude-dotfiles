@@ -108,6 +108,7 @@ Tells Claude to reach for the right tool every time:
 | Skill | What it solves |
 |-------|---------------|
 | `markdown-fetch` | WebFetch gets blocked by half the internet. This uses [markdown.new](https://markdown.new) to convert pages to clean markdown via Cloudflare's pipeline — auto, Workers AI, or headless browser fallback. |
+| `generate-contributor-guide` | Analyzes any codebase and generates a `.claude/contributor-guide.md` that documents how internal developers actually write code — patterns, conventions, naming, test style. Spawns parallel agents per architectural layer for thorough analysis. |
 
 ## File Structure
 
@@ -127,6 +128,10 @@ claude-dotfiles/
   skills/
     markdown-fetch/
       SKILL.md                                         # markdown.new web fetcher
+    generate-contributor-guide/
+      SKILL.md                                         # Codebase pattern analyzer
+      references/
+        analysis-checklist.md                          # Per-stack analysis items
   install.sh                                           # Merge + symlinks + delta config
   uninstall.sh                                         # Clean removal
 ```
